@@ -1,0 +1,28 @@
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_URL = "https://mastodon.social/api/v1"
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+
+headers = {
+    "Authorization": f"Bearer {ACCESS_TOKEN}"
+}
+
+def create_post(status_text):
+    response = requests.post(
+        f"{BASE_URL}/statuses",
+        headers=headers,
+        data={"status": status_text}
+    )
+    return response.json()
+
+def retrieve_post(post_id):
+    response = requests.get(f"{BASE_URL}/statuses/{post_id}", headers=headers)
+    return response.json()
+
+def delete_post(post_id):
+    response = requests.delete(f"{BASE_URL}/statuses/{post_id}", headers=headers)
+    return response.status_code == 200

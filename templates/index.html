@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitter Service - HW2-Crescendo</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .card { max-width: 600px; margin: 0 auto; }
@@ -16,7 +15,7 @@
 
 <div class="container mt-5">
     <h2 class="text-center">Twitter Service</h2>
-    
+
     <!-- Create Post Section -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -24,20 +23,20 @@
             <form id="postForm">
                 <div class="mb-3">
                     <label for="statusInput" class="form-label">Enter Status Update:</label>
-                    <input type="text" id="statusInput" class="form-control" placeholder="What's happening?" required>
+                    <input type="text" id="statusInput" class="form-control" placeholder="Type Something..." required>
                 </div>
                 <button type="submit" class="btn btn-primary">Post</button>
+                <div id="errorMessage" class="alert alert-danger mt-2" style="display: none;">Error: Invalid input or rate limit exceeded.</div>
             </form>
         </div>
     </div>
 
-    <!-- Display Post Section -->
+    <!-- Display Created Post Section -->
     <div id="postDisplay" class="card shadow-sm mb-4" style="display: none;">
         <div class="card-body">
-            <h4 class="card-title">Your Post</h4>
+            <h4 class="card-title">Your Latest Post</h4>
             <p id="postContent" class="alert alert-info"></p>
-            <p><strong>Post ID:</strong> <span id="postIdText"></span></p>
-            <button id="retrieveButton" class="btn btn-warning">Retrieve Post</button>
+            <p><strong>Latest Post ID:</strong> <span id="postIdText"></span></p>
             <button id="deleteButton" class="btn btn-danger">Delete Post</button>
         </div>
     </div>
@@ -45,96 +44,81 @@
     <!-- Retrieve Post by ID Section -->
     <div class="card shadow-sm">
         <div class="card-body">
-            <h4 class="card-title">Retrieve Post by ID</h4>
+            <h4 class="card-title">Retrieve Latest Post by ID</h4>
             <div class="mb-3">
                 <label for="postIdInput" class="form-label">Enter Post ID:</label>
                 <input type="text" id="postIdInput" class="form-control" placeholder="Enter post ID" required>
             </div>
             <button id="retrieveByIdButton" class="btn btn-info">Retrieve Post</button>
-            <div id="retrievedPost" class="mt-3 alert alert-success" style="display: none;">
-                <h5>Retrieved Post Content:</h5>
-                <p id="retrievedPostContent"></p>
-            </div>
+            <div id="retrievedPost" class="mt-3 alert alert-success" style="display: none;"></div>
         </div>
     </div>
-
 </div>
 
-<!-- Bootstrap JS and Popper.js -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
-
 <script>
-    let posts = {}; // Object to store posts with unique short numeric IDs
+    let posts = {};
+    let requestCount = 0;
+    const RATE_LIMIT = 5;
+    const RATE_LIMIT_TIME = 60000;
 
-    function generateShortId() {
-        return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit numeric ID
+    function checkRateLimit() {
+        if (requestCount >= RATE_LIMIT) {
+            document.getElementById('errorMessage').style.display = 'block';
+            setTimeout(() => { requestCount = 0; }, RATE_LIMIT_TIME);
+            return true;
+        }
+        requestCount++;
+        return false;
     }
 
-    // Handle the form submission for creating a post
     document.getElementById('postForm').addEventListener('submit', function (e) {
         e.preventDefault();
-        
+        if (checkRateLimit()) return;
+
         const status = document.getElementById('statusInput').value.trim();
-        if (status) {
-            const postId = generateShortId();
-            posts[postId] = status;
-
-            console.log('Post Created - ID: ' + postId);
-
-            // Display the post content and show the post ID
-            document.getElementById('postContent').innerText = status;
-            document.getElementById('postIdText').innerText = postId;
-            document.getElementById('postDisplay').style.display = 'block';
-
-            // Clear the input field
-            document.getElementById('statusInput').value = '';
+        if (!status) {
+            alert("Error: Status cannot be empty!");
+            return;
         }
+
+        const postId = Math.floor(100000 + Math.random() * 900000).toString();
+        posts[postId] = status;
+
+        // Display post content
+        document.getElementById('postContent').innerText = status;
+        document.getElementById('postIdText').innerText = postId;
+        document.getElementById('postDisplay').style.display = 'block';
+
+        // Clear input field
+        document.getElementById('statusInput').value = '';
     });
 
-    // Handle the retrieve button click
-    document.getElementById('retrieveButton').addEventListener('click', function () {
-        const postId = document.getElementById('postIdText').innerText;
-        if (postId && posts[postId]) {
-            console.log('Retrieving post with ID: ' + postId);
-            document.getElementById('postContent').innerText = posts[postId];
-            document.getElementById('postDisplay').style.display = 'block';
-        } else {
-            console.log('No post ID available to retrieve.');
-        }
-    });
-
-    // Handle the delete button click
     document.getElementById('deleteButton').addEventListener('click', function () {
         const postId = document.getElementById('postIdText').innerText;
-        if (postId && posts[postId]) {
-            console.log('Deleting post with ID: ' + postId);
-
-            delete posts[postId];
-            document.getElementById('postContent').innerText = 'No post created yet.';
-            document.getElementById('postIdText').innerText = '';
-            document.getElementById('postDisplay').style.display = 'none';
-        } else {
-            console.log('No post ID available to delete.');
+        if (!postId || !posts[postId]) {
+            alert("No post found to delete.");
+            return;
         }
+
+        delete posts[postId];
+        document.getElementById('postContent').innerText = '';
+        document.getElementById('postIdText').innerText = '';
+        document.getElementById('postDisplay').style.display = 'none';
+
+        alert("Post deleted successfully.");
     });
 
-    // Handle the retrieve by post ID button click
     document.getElementById('retrieveByIdButton').addEventListener('click', function () {
+        if (checkRateLimit()) return;
+
         const postIdInput = document.getElementById('postIdInput').value.trim();
-        if (postIdInput) {
-            console.log('Retrieving post with ID: ' + postIdInput);
-            
-            if (posts[postIdInput]) {
-                document.getElementById('retrievedPostContent').innerText = posts[postIdInput];
-                document.getElementById('retrievedPost').style.display = 'block';
-            } else {
-                document.getElementById('retrievedPostContent').innerText = 'No post found with this ID.';
-                document.getElementById('retrievedPost').style.display = 'block';
-            }
-        } else {
-            console.log('Please enter a valid post ID.');
+        if (!postIdInput || !posts[postIdInput]) {
+            document.getElementById('retrievedPost').innerText = 'No post found with this ID.';
+            document.getElementById('retrievedPost').style.display = 'block';
+            return;
         }
+        document.getElementById('retrievedPost').innerText = `Post: ${posts[postIdInput]}`;
+        document.getElementById('retrievedPost').style.display = 'block';
     });
 </script>
 

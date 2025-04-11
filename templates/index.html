@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitter Service - HW2-Crescendo</title>
+    <!-- Import Bootstrap CSS framework for styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS styles -->
     <style>
         .card { max-width: 600px; margin: 0 auto; }
         .alert { display: none; }
@@ -12,31 +14,44 @@
     </style>
 </head>
 <body>
+<!-- Main body content starts here -->
 
+<!-- Container with top margin for better spacing -->
 <div class="container mt-5">
+    <!-- Main application title -->
     <h2 class="text-center">Twitter Service</h2>
 
     <!-- Create Post Section -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
+            <!-- Section title -->
             <h4 class="card-title">Create New Post</h4>
+            <!-- Form for creating new posts -->
             <form id="postForm">
                 <div class="mb-3">
+                    <!-- Label for the status input field -->
                     <label for="statusInput" class="form-label">Enter Status Update:</label>
+                    <!-- Input field for entering the post content -->
                     <input type="text" id="statusInput" class="form-control" placeholder="Type Something..." required>
                 </div>
+                <!-- Submit button to create the post -->
                 <button type="submit" class="btn btn-primary">Post</button>
-                <div id="errorMessage" class="alert alert-danger mt-2" style="display: none;">Error: Invalid input or rate limit exceeded.</div>
+                <!-- Error message container - hidden by default -->
+                <div id="errorMessage" class="alert alert-danger mt-2" style="display: none;">Error: Invalid input.</div>
             </form>
         </div>
     </div>
 
-    <!-- Display Created Post Section -->
+    <!-- Display Created Post Section - hidden by default -->
     <div id="postDisplay" class="card shadow-sm mb-4" style="display: none;">
         <div class="card-body">
+            <!-- Section title -->
             <h4 class="card-title">Your Latest Post</h4>
+            <!-- Container to display the post content -->
             <p id="postContent" class="alert alert-info"></p>
+            <!-- Display the generated post ID -->
             <p><strong>Latest Post ID:</strong> <span id="postIdText"></span></p>
+            <!-- Button to delete the current post -->
             <button id="deleteButton" class="btn btn-danger">Delete Post</button>
         </div>
     </div>
@@ -44,80 +59,87 @@
     <!-- Retrieve Post by ID Section -->
     <div class="card shadow-sm">
         <div class="card-body">
+            <!-- Section title -->
             <h4 class="card-title">Retrieve Latest Post by ID</h4>
             <div class="mb-3">
+                <!-- Label for the post ID input field -->
                 <label for="postIdInput" class="form-label">Enter Post ID:</label>
+                <!-- Input field for entering the post ID to retrieve -->
                 <input type="text" id="postIdInput" class="form-control" placeholder="Enter post ID" required>
             </div>
+            <!-- Button to retrieve the post by ID -->
             <button id="retrieveByIdButton" class="btn btn-info">Retrieve Post</button>
+            <!-- Container to display the retrieved post - hidden by default -->
             <div id="retrievedPost" class="mt-3 alert alert-success" style="display: none;"></div>
         </div>
     </div>
 </div>
 
+<!-- JavaScript for handling application logic -->
 <script>
+    // Object to store all posts with ID as the key
     let posts = {};
-    let requestCount = 0;
-    const RATE_LIMIT = 5;
-    const RATE_LIMIT_TIME = 60000;
 
-    function checkRateLimit() {
-        if (requestCount >= RATE_LIMIT) {
-            document.getElementById('errorMessage').style.display = 'block';
-            setTimeout(() => { requestCount = 0; }, RATE_LIMIT_TIME);
-            return true;
-        }
-        requestCount++;
-        return false;
-    }
-
+    // Event listener for post form submission
     document.getElementById('postForm').addEventListener('submit', function (e) {
+        // Prevent the default form submission behavior
         e.preventDefault();
-        if (checkRateLimit()) return;
 
+        // Get and trim the status input value
         const status = document.getElementById('statusInput').value.trim();
+        // Validate that the status is not empty
         if (!status) {
             alert("Error: Status cannot be empty!");
             return;
         }
 
+        // Generate a random 6-digit ID for the post
         const postId = Math.floor(100000 + Math.random() * 900000).toString();
+        // Store the post in the posts object
         posts[postId] = status;
 
-        // Display post content
+        // Display the post content in the UI
         document.getElementById('postContent').innerText = status;
         document.getElementById('postIdText').innerText = postId;
         document.getElementById('postDisplay').style.display = 'block';
 
-        // Clear input field
+        // Clear the input field after post creation
         document.getElementById('statusInput').value = '';
     });
 
     document.getElementById('deleteButton').addEventListener('click', function () {
+        // Get the ID of the currently displayed post
         const postId = document.getElementById('postIdText').innerText;
+        // Check if post ID exists and is valid
         if (!postId || !posts[postId]) {
             alert("No post found to delete.");
             return;
         }
 
+        // Remove the post from the posts object
         delete posts[postId];
         document.getElementById('postContent').innerText = '';
         document.getElementById('postIdText').innerText = '';
         document.getElementById('postDisplay').style.display = 'none';
 
+        // Notify user of successful deletion
         alert("Post deleted successfully.");
     });
 
+    // Event listener for retrieve by ID button
     document.getElementById('retrieveByIdButton').addEventListener('click', function () {
-        if (checkRateLimit()) return;
-
+        // Get and trim the post ID input value
         const postIdInput = document.getElementById('postIdInput').value.trim();
+        // Check if the ID exists in the posts object
         if (!postIdInput || !posts[postIdInput]) {
+            // Display message when post is not found
             document.getElementById('retrievedPost').innerText = 'No post found with this ID.';
             document.getElementById('retrievedPost').style.display = 'block';
             return;
         }
+        // Display the retrieved post content
         document.getElementById('retrievedPost').innerText = `Post: ${posts[postIdInput]}`;
+        // Show the retrieved post container
         document.getElementById('retrievedPost').style.display = 'block';
     });
 </script>
